@@ -1,5 +1,11 @@
 # Python SDK
 
+> 2026-06-12: `rebocap_ws_sdk_ext.pyd` (py37/py38/py310) を公式 SDK v2 のビルド
+> (PE タイムスタンプ 2024-06-05) に更新。旧同梱版は 2024-04-04 ビルド。
+> v2 の Python ラッパー API はここに同梱のものと完全に同一 (diff 確認済み、
+> 差分は import パスと対応 Python バージョンの追加のみ) のため、
+> バイナリのみ差し替え。ラッパー側は変更していない。
+
 # current support python version
 - python3.7
 - python3.8
