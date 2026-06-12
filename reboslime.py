@@ -5,20 +5,23 @@ import struct
 import signal
 from libs.inputimeout import inputimeout, TimeoutOccurred
 from libs.rebocap import rebocap_ws_sdk
+from libs.slime_dest import resolve_slime_destination
 from rich.console import Console
 
 
 CONFIG = json.load(open('config.json'))
 VERSION = CONFIG['version']
 REBOCAP_COUNT = 8
-SLIME_IP = CONFIG['slime_ip']  # SlimeVR Server
-SLIME_PORT = CONFIG['slime_port']  # SlimeVR Server
+# SlimeVR Server (slimevr_ip / slimevr_port 优先, 兼容旧的 slime_ip / slime_port)
+SLIME_IP, SLIME_PORT = resolve_slime_destination(CONFIG)
 # SlimeVR packet frequency. Keep below 300 (above 300 has weird behavior)
 TPS = CONFIG['tps']
 ZERO_QUAT = [1, 0, 0, 0]
 ALL_CONNECTED = False
 PACKET_COUNTER = 0
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# 允许把目标地址设为广播地址 (对单播无影响)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 sdk = None
 global_quats = []
 
@@ -174,6 +177,7 @@ except TimeoutOccurred:
 init_rebocap_ws()
 
 # Connected To SlimeVR Server
+console.print(f"SlimeVR 服务器地址: {SLIME_IP}:{SLIME_PORT}")
 handshake = build_handshake()
 sock.sendto(handshake, (SLIME_IP, SLIME_PORT))
 PACKET_COUNTER += 1

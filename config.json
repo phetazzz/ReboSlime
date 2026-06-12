@@ -1,7 +1,7 @@
 {
     "version": "0.4.2",
-    "slime_ip": "127.0.0.1",
-    "slime_port": 6969,
+    "slimevr_ip": "127.0.0.1",
+    "slimevr_port": 6969,
     "tps": 150,
     "imus": {
         "6": [0, 9, 3, 1, 2, 4, 5],
