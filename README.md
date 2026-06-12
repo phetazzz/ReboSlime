@@ -34,6 +34,26 @@
 - 运行 `run.bat` 或者 `reboslime.exe`。
 - 现在应该能在 SlimeVR 中看到追踪器了！之后按照 SlimeVR 的用法来就可以了。
 
+## 配置说明 / Configuration
+
+`config.json` 中与 SlimeVR 服务器相关的配置项如下 (SlimeVR server related options in `config.json`):
+
+- `slimevr_ip`: SlimeVR 服务器的 IP 地址，默认为 `127.0.0.1`。当 SlimeVR 服务器运行在另一台主机上（例如虚拟机 / 容器经过 NAT 网络，UDP 广播无法自动发现服务器时），请填写该主机的 IP，即可单播直连。
+  IP address of the SlimeVR server (default: `127.0.0.1`). Set this to the server machine's IP when SlimeVR runs on another host — e.g. across a VM/container NAT network where UDP broadcast auto-discovery cannot reach the server — so packets are sent via unicast directly.
+- `slimevr_port`: SlimeVR 服务器的 UDP 端口，默认为 `6969`（SlimeVR 标准端口）。
+  UDP port of the SlimeVR server (default: `6969`, the SlimeVR standard port).
+- 旧版配置项 `slime_ip` / `slime_port` 仍然兼容；两者都未填写时保持原有行为（`127.0.0.1:6969`）。
+  The legacy keys `slime_ip` / `slime_port` are still honored; with neither present the previous default (`127.0.0.1:6969`) is used.
+
+配置示例 (Example):
+
+```json
+{
+    "slimevr_ip": "192.168.1.23",
+    "slimevr_port": 6969
+}
+```
+
 ## 开发相关
 
 - 本项目使用 `Poetry` 进行依赖管理，请安装 3.10.x 版本的 Python 后运行 `pip install poetry`。
