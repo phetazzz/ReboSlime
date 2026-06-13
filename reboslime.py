@@ -6,6 +6,7 @@ import signal
 from libs.inputimeout import inputimeout, TimeoutOccurred
 from libs.rebocap import rebocap_ws_sdk
 from libs.slime_dest import resolve_slime_destination
+from libs.node_list import resolve_node_list, VALID_PRESETS
 from rich.console import Console
 
 
@@ -19,6 +20,8 @@ TPS = CONFIG['tps']
 ZERO_QUAT = [1, 0, 0, 0]
 ALL_CONNECTED = False
 PACKET_COUNTER = 0
+# 实际送出するノードの确定リスト (起動时に决定; pose 回调もこれを参照する)
+ACTIVE_NODES = []
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # 允许把目标地址设为广播地址 (对单播无影响)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -30,7 +33,7 @@ global_quats = []
 
 def pose_msg_callback(self: rebocap_ws_sdk.RebocapWsSdk, tran: list, pose24: list, static_index: int, ts: float):
     for i in range(24):
-        if i in CONFIG["imus"][str(REBOCAP_COUNT)]:
+        if i in ACTIVE_NODES:
             update_imu_quat(i, pose24[i][0], - pose24[i][1],
                             pose24[i][2], pose24[i][3])
             # if i == 10:
@@ -167,11 +170,27 @@ console.print("关于节点数目的使用说明：\n\
 · 12 点：胸 + 腰 + 大腿 + 小腿 + 脚 + 大臂 + 小臂 \n\
 · 15 点：全身\n")
 
+# custom_points が存在し空でなければ点数プリセットを完全に无视し, プロンプトも省略する.
+CUSTOM_POINTS = CONFIG.get('custom_points')
+if CUSTOM_POINTS:
+    REBOCAP_COUNT = None
+    console.print("检测到 custom_points, 将忽略点数预设, 使用自定义节点列表。")
+else:
+    try:
+        REBOCAP_COUNT = inputimeout(
+            "想要以几点动捕的形式运行呢？如无输入，将在 10 秒后以 8 点模式运行（请输入 6 / 8 / 10 / 12 / 15）: ", 10)
+    except TimeoutOccurred:
+        REBOCAP_COUNT = 8
+    if int(REBOCAP_COUNT) not in VALID_PRESETS:
+        console.print("目前只支持 6 / 8 / 10 / 12 / 15 点哦！")
+        exit()
+
+# 送出ノードの确定リストを决定 (回调が参照するので接続前に确定させる).
 try:
-    REBOCAP_COUNT = inputimeout(
-        "想要以几点动捕的形式运行呢？如无输入，将在 10 秒后以 8 点模式运行（请输入 6 / 8 / 10 / 12 / 15）: ", 10)
-except TimeoutOccurred:
-    REBOCAP_COUNT = 8
+    ACTIVE_NODES, NODE_SOURCE = resolve_node_list(CONFIG, REBOCAP_COUNT)
+except ValueError as e:
+    console.print(str(e))
+    exit()
 
 # 连接 Rebocap
 init_rebocap_ws()
@@ -186,13 +205,8 @@ time.sleep(0.1)
 
 # Add additional IMUs. SlimeVR only supports one "real" tracker per IP so the workaround is to make all the
 # trackers appear as extensions of the first tracker.
-if int(REBOCAP_COUNT) in (6, 8, 10, 12, 15):
-    imus = CONFIG['imus'][str(REBOCAP_COUNT)]
-    add_imus(imus)
-    console.print("Add IMUs: " + str(imus))
-else:
-    console.print("目前只支持 6 / 8 / 10 / 12 / 15 点哦！")
-    exit()
+add_imus(ACTIVE_NODES)
+console.print(f"Add IMUs ({NODE_SOURCE}): {ACTIVE_NODES}")
 
 time.sleep(.5)
 ALL_CONNECTED = True
